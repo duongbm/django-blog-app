@@ -1,0 +1,3 @@
+# Django Practice
+
+Blog application
