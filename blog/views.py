@@ -4,6 +4,7 @@ from django.shortcuts import render, get_object_or_404
 # Create your views here.
 from django.views.generic import ListView
 
+from blog.forms import EmailPostForm
 from blog.models import Post
 
 
@@ -34,3 +35,17 @@ def post_detail(request, year, month, day, post):
                              publish__year=year,
                              publish__month=month, publish__day=day)
     return render(request, 'detail.html', {'post': post})
+
+
+def post_share(request, post_id):
+    post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
+    if request.method == 'POST':
+        form = EmailPostForm(request.POST)
+        # form was submitted
+        if form.is_valid():
+            # form field pass validation
+            cd = form.cleaned_data
+            # send mail
+    else:
+        form = EmailPostForm()
+    return render(request, 'share.html', {'post': post, 'form': form})
