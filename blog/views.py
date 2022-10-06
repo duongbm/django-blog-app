@@ -2,9 +2,10 @@ from django.core.paginator import Paginator, PageNotAnInteger, EmptyPage
 from django.shortcuts import render, get_object_or_404
 
 # Create your views here.
+from django.views.decorators.http import require_POST
 from django.views.generic import ListView
 
-from blog.forms import EmailPostForm
+from blog.forms import EmailPostForm, CommentForm
 from blog.models import Post
 
 
@@ -34,7 +35,9 @@ def post_detail(request, year, month, day, post):
                              slug=post,
                              publish__year=year,
                              publish__month=month, publish__day=day)
-    return render(request, 'detail.html', {'post': post})
+    comments = post.comments.filter(active=True)
+    form = CommentForm()
+    return render(request, 'detail.html', {'post': post, 'comments': comments, 'form': form})
 
 
 def post_share(request, post_id):
@@ -49,3 +52,20 @@ def post_share(request, post_id):
     else:
         form = EmailPostForm()
     return render(request, 'share.html', {'post': post, 'form': form})
+
+
+@require_POST
+def post_comment(request, post_id):
+    post = get_object_or_404(Post, id=post_id, status=Post.Status.PUBLISHED)
+    comment = None
+    form = CommentForm(data=request.POST)
+    if form.is_valid():
+        # create instance without save to database, allow modify before save
+        comment = form.save(commit=False)
+        comment.post = post
+        comment.save()
+    return render(request, 'comment.html', {
+        'post': post,
+        'form': form,
+        'comment': comment
+    })
